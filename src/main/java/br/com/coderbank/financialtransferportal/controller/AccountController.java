@@ -7,10 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/v1/accounts")
@@ -26,4 +23,11 @@ public class AccountController {
                 .body(service.create(accountRequestDto));
     }
 
+    @GetMapping("{id}")
+    public ResponseEntity<AccountResponseDto> getDetails(@PathVariable("id") String id){
+
+        return service.getDetails(id)
+                .map(ResponseEntity::ok)
+                .orElseGet( () -> ResponseEntity.notFound().build());
+    }
 }

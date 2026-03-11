@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 
@@ -32,6 +34,13 @@ public class AccountService {
         Account savedAccount = repository.save(accountEntity);
 
         return mapper.toDto(savedAccount);
+    }
+
+    public Optional<AccountResponseDto> getDetails(String id){
+        var accountId = UUID.fromString(id);
+
+        return repository.findById(accountId)
+                .map(mapper::toDto);
     }
 
     private String generateAccountNumber(){

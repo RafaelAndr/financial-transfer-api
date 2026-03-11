@@ -1,5 +1,6 @@
 package br.com.coderbank.financialtransferportal.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -29,6 +30,7 @@ public class Account {
 
     @Column(name = "creation_date", nullable = false, updatable = false)
     @CreationTimestamp
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssX")
     private OffsetDateTime creationDate;
 
     @Column(name = "client_id")
