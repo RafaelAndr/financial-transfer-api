@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-
 @Service
 @RequiredArgsConstructor
 public class AccountService {
