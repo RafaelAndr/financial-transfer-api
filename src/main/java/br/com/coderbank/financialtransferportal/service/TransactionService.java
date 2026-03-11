@@ -11,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class TransactionService {
@@ -47,4 +50,15 @@ public class TransactionService {
         }
     }
 
+    public List<TransactionResponseDto> accountTransactions(String id){
+
+        var idAccount = UUID.fromString(id);
+
+        List<Transaction> list = repository.findBySourceAccountOrDestinationAccount(idAccount, idAccount);
+
+        return list
+                .stream()
+                .map(mapper::toDto)
+                .toList();
+    }
 }
