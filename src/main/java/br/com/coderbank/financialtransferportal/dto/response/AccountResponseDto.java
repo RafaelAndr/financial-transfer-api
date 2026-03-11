@@ -5,7 +5,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record AccountResponseDto(
-        UUID accountId,
+        UUID id,
         String agencyNumber,
         String accountNumber,
         BigDecimal balance,
