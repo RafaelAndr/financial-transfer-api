@@ -30,10 +30,7 @@ public class AccountController {
 
     @GetMapping("{id}")
     public ResponseEntity<AccountResponseDto> getDetails(@PathVariable("id") String id){
-
-        return service.getDetails(id)
-                .map(ResponseEntity::ok)
-                .orElseGet( () -> ResponseEntity.notFound().build());
+        return ResponseEntity.ok(service.getDetails(id));
     }
 
     @GetMapping("{id}/extract")

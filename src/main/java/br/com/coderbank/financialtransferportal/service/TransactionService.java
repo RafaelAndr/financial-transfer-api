@@ -6,7 +6,9 @@ import br.com.coderbank.financialtransferportal.entity.Transaction;
 import br.com.coderbank.financialtransferportal.enums.TransactionStatus;
 import br.com.coderbank.financialtransferportal.enums.TransactionType;
 import br.com.coderbank.financialtransferportal.mapper.TransactionMapper;
+import br.com.coderbank.financialtransferportal.repository.AccountRepository;
 import br.com.coderbank.financialtransferportal.repository.TransactionRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,7 @@ import java.util.UUID;
 public class TransactionService {
 
     private final TransactionRepository repository;
+    private final AccountRepository accountRepository;
     private final AccountService accountService;
     private final TransactionMapper mapper;
 
@@ -54,9 +57,12 @@ public class TransactionService {
 
         var idAccount = UUID.fromString(id);
 
-        List<Transaction> list = repository.findBySourceAccountOrDestinationAccount(idAccount, idAccount);
+        if (!accountRepository.existsById(idAccount)){
+            throw new EntityNotFoundException("Account not found");
+        }
 
-        return list
+        return repository
+                .findBySourceAccountOrDestinationAccount(idAccount, idAccount)
                 .stream()
                 .map(mapper::toDto)
                 .toList();

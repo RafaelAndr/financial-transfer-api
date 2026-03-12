@@ -65,6 +65,7 @@ public class GlobalHandlerException {
 
         problemDetail.setTitle("Resource not found");
         problemDetail.setDetail(e.getMessage());
+        problemDetail.setType(URI.create("https://api.coderbank.com.br/erros"));
 
         return problemDetail;
     }
