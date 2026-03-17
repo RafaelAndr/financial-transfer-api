@@ -6,6 +6,6 @@ import java.util.UUID;
 
 public record AccountRequestDto(
         @NotNull(message = "Required field")
-        UUID clientId
+        UUID customerId
 ) {
 }

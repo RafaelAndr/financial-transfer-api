@@ -31,7 +31,7 @@ public class AccountService {
         accountEntity.setBalance(INITIAL_BALANCE);
         accountEntity.setAgencyNumber(AGENCY_NUMBER);
         accountEntity.setAccountNumber(generateAccountNumber());
-        accountEntity.setClientId(accountRequestDto.clientId());
+        accountEntity.setClientId(accountRequestDto.customerId());
 
         Account savedAccount = repository.save(accountEntity);
 
