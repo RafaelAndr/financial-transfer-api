@@ -2,17 +2,18 @@ package br.com.coderbank.financialtransferportal.service;
 
 import br.com.coderbank.financialtransferportal.dto.request.AccountRequestDto;
 import br.com.coderbank.financialtransferportal.dto.response.AccountResponseDto;
+import br.com.coderbank.financialtransferportal.dto.response.TransactionResponseDto;
 import br.com.coderbank.financialtransferportal.entity.Account;
-import br.com.coderbank.financialtransferportal.exception.InsufficientBalanceException;
 import br.com.coderbank.financialtransferportal.mapper.AccountMapper;
+import br.com.coderbank.financialtransferportal.mapper.TransactionMapper;
 import br.com.coderbank.financialtransferportal.repository.AccountRepository;
+import br.com.coderbank.financialtransferportal.repository.TransactionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -21,7 +22,9 @@ import java.util.concurrent.ThreadLocalRandom;
 public class AccountService {
 
     private final AccountRepository repository;
+    private final TransactionRepository transactionRepository;
     private final AccountMapper mapper;
+    private final TransactionMapper transactionMapper;
     private static final BigDecimal INITIAL_BALANCE = BigDecimal.ZERO;
     private static final String AGENCY_NUMBER = "0001";
 
@@ -61,43 +64,19 @@ public class AccountService {
         return accountNumber;
     }
 
-    @Transactional
-    public void deposit(BigDecimal amount, UUID accoundId){
-        Account account = repository
-                .findById(accoundId)
-                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+    public List<TransactionResponseDto> accountTransactions(String id){
 
-        account.setBalance(account.getBalance().add(amount));
-    }
+        var idAccount = UUID.fromString(id);
 
-    @Transactional
-    public void withdraw(BigDecimal amount, UUID accoundId){
-        Account account = repository
-                .findById(accoundId)
-                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
-
-        if (account.getBalance().compareTo(amount) < 0) {
-            throw new InsufficientBalanceException("Insufficient balance to execute withdraw");
+        if (!repository.existsById(idAccount)){
+            throw new EntityNotFoundException("Account not found");
         }
 
-        account.setBalance(account.getBalance().subtract(amount));
+        return transactionRepository
+                .findBySourceAccountOrDestinationAccount(idAccount, idAccount)
+                .stream()
+                .map(transactionMapper::toDto)
+                .toList();
     }
 
-    @Transactional
-    public void transfer(BigDecimal amount, UUID sourceAccountId, UUID destinationAccountId){
-        Account sourceAccount = repository
-                .findById(sourceAccountId)
-                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
-
-        Account destinationAccount = repository
-                .findById(destinationAccountId)
-                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
-
-        if (sourceAccount.getBalance().compareTo(amount) < 0) {
-            throw new InsufficientBalanceException("Insufficient balance to execute transfer");
-        }
-
-        sourceAccount.setBalance(sourceAccount.getBalance().subtract(amount));
-        destinationAccount.setBalance(destinationAccount.getBalance().add(amount));
-    }
 }

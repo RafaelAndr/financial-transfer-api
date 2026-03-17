@@ -2,9 +2,11 @@ package br.com.coderbank.financialtransferportal.service;
 
 import br.com.coderbank.financialtransferportal.dto.request.TransactionRequestDto;
 import br.com.coderbank.financialtransferportal.dto.response.TransactionResponseDto;
+import br.com.coderbank.financialtransferportal.entity.Account;
 import br.com.coderbank.financialtransferportal.entity.Transaction;
 import br.com.coderbank.financialtransferportal.enums.TransactionStatus;
 import br.com.coderbank.financialtransferportal.enums.TransactionType;
+import br.com.coderbank.financialtransferportal.exception.InsufficientBalanceException;
 import br.com.coderbank.financialtransferportal.mapper.TransactionMapper;
 import br.com.coderbank.financialtransferportal.repository.AccountRepository;
 import br.com.coderbank.financialtransferportal.repository.TransactionRepository;
@@ -13,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
@@ -22,7 +24,6 @@ public class TransactionService {
 
     private final TransactionRepository repository;
     private final AccountRepository accountRepository;
-    private final AccountService accountService;
     private final TransactionMapper mapper;
 
     private TransactionResponseDto saveTransaction(Transaction transaction){
@@ -37,34 +38,59 @@ public class TransactionService {
         Transaction transaction = mapper.toEntity(transactionRequestDto);
 
         if (transactionRequestDto.type() == TransactionType.DEPOSIT) {
-            accountService.deposit(transactionRequestDto.amount(), transactionRequestDto.destinationAccount());
+            deposit(transactionRequestDto.amount(), transactionRequestDto.destinationAccount());
             transaction.setStatus(TransactionStatus.COMPLETED);
             return saveTransaction(transaction);
         }
         else if (transactionRequestDto.type() == TransactionType.WITHDRAW) {
-            accountService.withdraw(transactionRequestDto.amount(), transactionRequestDto.sourceAccount());
+            withdraw(transactionRequestDto.amount(), transactionRequestDto.sourceAccount());
             transaction.setStatus(TransactionStatus.COMPLETED);
             return saveTransaction(transaction);
         }
         else {
-            accountService.transfer(transactionRequestDto.amount(), transactionRequestDto.sourceAccount(), transactionRequestDto.destinationAccount());
+            transfer(transactionRequestDto.amount(), transactionRequestDto.sourceAccount(), transactionRequestDto.destinationAccount());
             transaction.setStatus(TransactionStatus.COMPLETED);
             return saveTransaction(transaction);
         }
     }
 
-    public List<TransactionResponseDto> accountTransactions(String id){
+    @Transactional
+    public void deposit(BigDecimal amount, UUID accoundId){
+        Account account = accountRepository
+                .findById(accoundId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
 
-        var idAccount = UUID.fromString(id);
+        account.setBalance(account.getBalance().add(amount));
+    }
 
-        if (!accountRepository.existsById(idAccount)){
-            throw new EntityNotFoundException("Account not found");
+    @Transactional
+    public void withdraw(BigDecimal amount, UUID accoundId){
+        Account account = accountRepository
+                .findById(accoundId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+
+        if (account.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientBalanceException("Insufficient balance to execute withdraw");
         }
 
-        return repository
-                .findBySourceAccountOrDestinationAccount(idAccount, idAccount)
-                .stream()
-                .map(mapper::toDto)
-                .toList();
+        account.setBalance(account.getBalance().subtract(amount));
+    }
+
+    @Transactional
+    public void transfer(BigDecimal amount, UUID sourceAccountId, UUID destinationAccountId){
+        Account sourceAccount = accountRepository
+                .findById(sourceAccountId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+
+        Account destinationAccount = accountRepository
+                .findById(destinationAccountId)
+                .orElseThrow(() -> new EntityNotFoundException("Account not found"));
+
+        if (sourceAccount.getBalance().compareTo(amount) < 0) {
+            throw new InsufficientBalanceException("Insufficient balance to execute transfer");
+        }
+
+        sourceAccount.setBalance(sourceAccount.getBalance().subtract(amount));
+        destinationAccount.setBalance(destinationAccount.getBalance().add(amount));
     }
 }
